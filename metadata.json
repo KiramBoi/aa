@@ -1,0 +1,6 @@
+{
+  "name": "Dream Journal",
+  "description": "An interactive dream journal and tracker for lucid dreamers. Features visual rating grids, voice recording logs, and a celestial dream calendar with visual phase levels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
