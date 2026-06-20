@@ -19,6 +19,10 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import android.net.Uri
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.squareup.moshi.Types
 
 class DreamViewModel(application: Application) : AndroidViewModel(application) {
     private val db = DreamDatabase.getDatabase(application)
@@ -416,6 +420,66 @@ class DreamViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearRealityCheck() {
         realityCheckStatus.value = null
+    }
+
+    // --- Offline Data Backup & Share Section ---
+    private val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
+    private val entriesListType = Types.newParameterizedType(List::class.java, DreamEntry::class.java)
+    private val jsonAdapter = moshi.adapter<List<DreamEntry>>(entriesListType)
+
+    val exportStatusMessage = MutableStateFlow<String?>(null)
+    val importStatusMessage = MutableStateFlow<String?>(null)
+
+    fun exportDataToUri(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val entries = allEntries.value
+                val jsonString = jsonAdapter.toJson(entries)
+                getApplication<Application>().contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
+                }
+                exportStatusMessage.value = "Successfully exported ${entries.size} dream voyages offline!"
+            } catch (e: Exception) {
+                Log.e("DreamVM", "Failed to export data", e)
+                exportStatusMessage.value = "Export failed: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun importDataFromUri(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val jsonString = getApplication<Application>().contentResolver.openInputStream(uri)?.use { inputStream ->
+                    inputStream.bufferedReader().use { it.readText() }
+                }
+                if (!jsonString.isNullOrEmpty()) {
+                    val entries = jsonAdapter.fromJson(jsonString)
+                    if (!entries.isNullOrEmpty()) {
+                        entries.forEach { entry ->
+                            repository.saveEntry(entry)
+                        }
+                        importStatusMessage.value = "Successfully imported ${entries.size} dream voyages offline!"
+                    } else {
+                        importStatusMessage.value = "Error: Invalid or empty backup data file."
+                    }
+                } else {
+                    importStatusMessage.value = "Error: File is empty."
+                }
+            } catch (e: Exception) {
+                Log.e("DreamVM", "Failed to import data", e)
+                importStatusMessage.value = "Import failed: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun clearExportStatus() {
+        exportStatusMessage.value = null
+    }
+
+    fun clearImportStatus() {
+        importStatusMessage.value = null
     }
 
     // Utility

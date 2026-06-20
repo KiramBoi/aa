@@ -421,16 +421,16 @@ fun CalendarScreen(viewModel: DreamViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            // Gemini AI Deep Coach button
+                            // Offline Coach button
                             Button(
                                 onClick = { viewModel.requestAiInterpretation(entry) },
                                 colors = ButtonDefaults.buttonColors(containerColor = CosmicSecondary),
                                 contentPadding = PaddingValues(horizontal = 12.dp),
                                 modifier = Modifier.weight(1.2f).height(38.dp).testTag("ai_coach_button")
                             ) {
-                                Icon(Icons.Default.AutoAwesome, contentDescription = "AI Interpreter", modifier = Modifier.size(14.dp), tint = Color.White)
+                                Icon(Icons.Default.QueryStats, contentDescription = "Offline Analyst", modifier = Modifier.size(14.dp), tint = Color.White)
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Ask AI Coach", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Offline Coach", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
 
                             Button(
@@ -506,16 +506,16 @@ fun CalendarScreen(viewModel: DreamViewModel) {
         Spacer(modifier = Modifier.height(20.dp))
     }
 
-    // AI Analysis popup Dialog
+    // Offline local Analysis popup Dialog
     if (aiText != null || isAnalyzing) {
         AlertDialog(
             onDismissRequest = { viewModel.clearAiAnalysis() },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = "Gemini AI", tint = CosmicSecondary)
+                    Icon(Icons.Default.QueryStats, contentDescription = "Offline Coach", tint = CosmicSecondary)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "AI Interpretation Scroll",
+                        "Local Dream Analysis",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -529,7 +529,7 @@ fun CalendarScreen(viewModel: DreamViewModel) {
                 ) {
                     if (isAnalyzing) {
                         CircularProgressIndicator(color = CosmicSecondary, modifier = Modifier.size(32.dp).padding(vertical = 16.dp))
-                        Text("Reading the stardust, decoding dream patterns...", fontSize = 13.sp, color = Color.Gray)
+                        Text("Reading local subconscious ledgers, decoding dream patterns...", fontSize = 13.sp, color = Color.Gray)
                     } else {
                         Text(
                             text = aiText ?: "Vaporizing stardust logs. Try asking again.",

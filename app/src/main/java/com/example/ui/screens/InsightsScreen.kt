@@ -31,12 +31,36 @@ import androidx.compose.ui.unit.sp
 import com.example.data.DreamEntry
 import com.example.ui.DreamViewModel
 import com.example.ui.theme.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.util.Log
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InsightsScreen(viewModel: DreamViewModel) {
     val entries by viewModel.allEntries.collectAsState()
     val realityResult by viewModel.realityCheckStatus.collectAsState()
+    val exportStatus by viewModel.exportStatusMessage.collectAsState()
+    val importStatus by viewModel.importStatusMessage.collectAsState()
+
+    // SAF File selection and creation contracts for offline backups
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json"),
+        onResult = { uri ->
+            if (uri != null) {
+                viewModel.exportDataToUri(uri)
+            }
+        }
+    )
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            if (uri != null) {
+                viewModel.importDataFromUri(uri)
+            }
+        }
+    )
 
     val scrollState = rememberScrollState()
 
@@ -302,6 +326,63 @@ fun InsightsScreen(viewModel: DreamViewModel) {
                 )
             }
         }
+
+        // Offline Data Portability Card (100% Safe, Local, and Offline)
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = CosmicCardBg),
+            shape = RoundedCornerShape(24.dp),
+            border = BorderStroke(1.dp, BorderColor)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Offline Data Portability",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = CosmicSecondary
+                    ),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = "Backup, export, or restore your entire subconscious dream journal locally on your device with complete privacy. Share the export file through Telegram, email, or keep it safe offline.",
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Share / Export Action
+                CoachActionRow(
+                    title = "Share Whole Data Ledger (Export)",
+                    desc = "Generates and downloads a portable dream backup JSON file to share with any app.",
+                    icon = Icons.Default.Share,
+                    color = CosmicPrimary,
+                    onClick = {
+                        try {
+                            exportLauncher.launch("dream_voyages_backup.json")
+                        } catch (e: Exception) {
+                            Log.e("InsightsScreen", "Failed launching export helper", e)
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Load / Import Action
+                CoachActionRow(
+                    title = "Load Previous Ledger (Import)",
+                    desc = "Choose and open an existing dream backup file from other devices to load all historical logs.",
+                    icon = Icons.Default.FileOpen,
+                    color = RecallGold,
+                    onClick = {
+                        try {
+                            importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                        } catch (e: Exception) {
+                            Log.e("InsightsScreen", "Failed launching import helper", e)
+                        }
+                    }
+                )
+            }
+        }
         
         Spacer(modifier = Modifier.height(20.dp))
     }
@@ -331,6 +412,70 @@ fun InsightsScreen(viewModel: DreamViewModel) {
                     colors = ButtonDefaults.textButtonColors(contentColor = LucidTeal)
                 ) {
                     Text("Close Probe", fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = CosmicCardBg,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    // Backup export confirmation Dialog
+    if (exportStatus != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearExportStatus() },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CloudQueue, contentDescription = "Export Status", tint = CosmicPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Export Success", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    text = exportStatus ?: "",
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.9f),
+                    lineHeight = 18.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.clearExportStatus() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = CosmicPrimary)
+                ) {
+                    Text("Understood", fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = CosmicCardBg,
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    // Backup import confirmation Dialog
+    if (importStatus != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearImportStatus() },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Backup, contentDescription = "Import Status", tint = RecallGold)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Import Success", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    text = importStatus ?: "",
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.9f),
+                    lineHeight = 18.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.clearImportStatus() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = RecallGold)
+                ) {
+                    Text("Fabulous", fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = CosmicCardBg,
